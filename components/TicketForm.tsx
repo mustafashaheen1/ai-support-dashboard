@@ -6,8 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { AlertCircle, CheckCircle, Sparkles } from "lucide-react";
-// Add Firebase imports
+import { CheckCircle, Sparkles } from "lucide-react"; // Removed AlertCircle
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -15,15 +14,25 @@ interface TicketFormProps {
   onSuccess?: () => void;
 }
 
+interface AIAnalysis {
+  sentiment?: string;
+  category?: string;
+  suggestedResponse?: string;
+  analysis?: string;
+  rawAnalysis?: string;
+}
+
 export default function TicketForm({ onSuccess }: TicketFormProps) {
   const [customerName, setCustomerName] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [analysis, setAnalysis] = useState<AIAnalysis | null>(null); // Fixed type
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+
+  // ... rest of the component
 
   const handleSubmit = async () => {
     setLoading(true);

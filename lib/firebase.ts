@@ -5,13 +5,13 @@ import { getAuth } from 'firebase/auth';
 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBKiaT_NV3HniLVYQ0bFHmLjwGOX1ibJ98",
-  authDomain: "ai-support-dashboard-a2f99.firebaseapp.com",
-  projectId: "ai-support-dashboard-a2f99",
-  storageBucket: "ai-support-dashboard-a2f99.firebasestorage.app",
-  messagingSenderId: "249819961603",
-  appId: "1:249819961603:web:71e76fe9c96647faa4f136"
-};
+     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+     projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+     storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+   };
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);

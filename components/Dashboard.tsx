@@ -40,6 +40,22 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
+// Add these type definitions at the top of Dashboard.tsx
+
+interface AIAnalysis {
+  sentiment?: string;
+  category?: string;
+  suggestedResponse?: string;
+  analysis?: string;
+  rawAnalysis?: string;
+}
+
+interface FirebaseTimestamp {
+  seconds: number;
+  nanoseconds: number;
+  toDate(): Date;
+}
+
 interface Ticket {
   id: string;
   customer: string;
@@ -51,7 +67,7 @@ interface Ticket {
   message: string;
   category?: string;
   suggestedResponse?: string;
-  createdAt?: any;
+  createdAt?: FirebaseTimestamp | Date;
 }
 
 export default function SupportDashboard() {
