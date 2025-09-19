@@ -46,14 +46,6 @@ import { db } from "@/lib/firebase";
 
 // Add these type definitions at the top of Dashboard.tsx
 
-interface AIAnalysis {
-  sentiment?: string;
-  category?: string;
-  suggestedResponse?: string;
-  analysis?: string;
-  rawAnalysis?: string;
-}
-
 interface FirebaseTimestamp {
   seconds: number;
   nanoseconds: number;

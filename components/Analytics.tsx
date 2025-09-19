@@ -16,7 +16,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 
@@ -34,14 +33,25 @@ interface Ticket {
   suggestedResponse?: string;
 }
 
+interface ChartDataPoint {
+  name: string;
+  value: number;
+  percentage?: string;
+}
+
+interface DailyTicket {
+  date: string;
+  count: number;
+}
+
 export default function Analytics() {
   const [stats, setStats] = useState({
     totalTickets: 0,
     resolvedTickets: 0,
     avgResolutionTime: 0,
-    sentimentBreakdown: [] as any[],
-    dailyTickets: [] as any[],
-    categoryBreakdown: [] as any[],
+    sentimentBreakdown: [] as ChartDataPoint[],
+    dailyTickets: [] as DailyTicket[],
+    categoryBreakdown: [] as ChartDataPoint[],
   });
 
   useEffect(() => {
@@ -112,6 +122,7 @@ export default function Analytics() {
         ([name, value]) => ({
           name,
           value,
+          percentage: "",
         })
       );
 
