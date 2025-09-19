@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  collection,
-  query,
-  getDocs,
-  where,
-  Timestamp,
-} from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import {
   LineChart,
@@ -26,14 +20,28 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+// Add the Ticket interface
+interface Ticket {
+  id: string;
+  customer: string;
+  subject: string;
+  status: "new" | "in-progress" | "resolved";
+  priority: "low" | "medium" | "high";
+  sentiment: "positive" | "neutral" | "negative";
+  timestamp: string;
+  message: string;
+  category?: string;
+  suggestedResponse?: string;
+}
+
 export default function Analytics() {
   const [stats, setStats] = useState({
     totalTickets: 0,
     resolvedTickets: 0,
     avgResolutionTime: 0,
-    sentimentBreakdown: [],
-    dailyTickets: [],
-    categoryBreakdown: [],
+    sentimentBreakdown: [] as any[],
+    dailyTickets: [] as any[],
+    categoryBreakdown: [] as any[],
   });
 
   useEffect(() => {
@@ -44,9 +52,17 @@ export default function Analytics() {
     try {
       // Fetch all tickets
       const ticketsSnapshot = await getDocs(collection(db, "tickets"));
-      const tickets = ticketsSnapshot.docs.map((doc) => ({
+      const tickets: Ticket[] = ticketsSnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data(),
+        customer: doc.data().customer || "Unknown",
+        subject: doc.data().subject || "No Subject",
+        status: doc.data().status || "new",
+        priority: doc.data().priority || "medium",
+        sentiment: doc.data().sentiment || "neutral",
+        timestamp: doc.data().timestamp || new Date().toISOString(),
+        message: doc.data().message || "",
+        category: doc.data().category,
+        suggestedResponse: doc.data().suggestedResponse,
       }));
 
       // Calculate stats
@@ -66,7 +82,8 @@ export default function Analytics() {
         ([key, value]) => ({
           name: key.charAt(0).toUpperCase() + key.slice(1),
           value: value,
-          percentage: ((value / totalTickets) * 100).toFixed(1),
+          percentage:
+            totalTickets > 0 ? ((value / totalTickets) * 100).toFixed(1) : "0",
         })
       );
 
@@ -209,7 +226,9 @@ export default function Analytics() {
                     <Cell
                       key={`cell-${index}`}
                       fill={
-                        COLORS[entry.name.toLowerCase() as keyof typeof COLORS]
+                        COLORS[
+                          entry.name.toLowerCase() as keyof typeof COLORS
+                        ] || "#8884d8"
                       }
                     />
                   ))}
