@@ -66,11 +66,12 @@ interface Ticket {
   createdAt?: FirebaseTimestamp | Date;
 }
 
+type Filter = "all" | "new" | "in-progress" | "resolved";
+
 export default function SupportDashboard() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [activeFilter, setActiveFilter] = useState;
-  "all" | "new" | "in-progress" | ("resolved" > "all");
+  const [activeFilter, setActiveFilter] = useState<Filter>("all");
   const [showNewTicket, setShowNewTicket] = useState(false);
   const [loading, setLoading] = useState(true);
   const [customResponse, setCustomResponse] = useState("");
