@@ -33,10 +33,12 @@ interface Ticket {
   suggestedResponse?: string;
 }
 
+// IMPORTANT: make data compatible with chart libs expecting index-signature records
 interface ChartDataPoint {
   name: string;
   value: number;
   percentage?: string;
+  [key: string]: string | number | undefined; // <-- added to satisfy ChartDataInput
 }
 
 interface DailyTicket {
@@ -88,14 +90,14 @@ export default function Analytics() {
         negative: tickets.filter((t) => t.sentiment === "negative").length,
       };
 
-      const sentimentBreakdown = Object.entries(sentimentCounts).map(
-        ([key, value]) => ({
-          name: key.charAt(0).toUpperCase() + key.slice(1),
-          value: value,
-          percentage:
-            totalTickets > 0 ? ((value / totalTickets) * 100).toFixed(1) : "0",
-        })
-      );
+      const sentimentBreakdown: ChartDataPoint[] = Object.entries(
+        sentimentCounts
+      ).map(([key, value]) => ({
+        name: key.charAt(0).toUpperCase() + key.slice(1),
+        value,
+        percentage:
+          totalTickets > 0 ? ((value / totalTickets) * 100).toFixed(1) : "0",
+      }));
 
       // Daily tickets (last 7 days)
       const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -104,7 +106,7 @@ export default function Analytics() {
         return date.toISOString().split("T")[0];
       }).reverse();
 
-      const dailyTickets = last7Days.map((date) => ({
+      const dailyTickets: DailyTicket[] = last7Days.map((date) => ({
         date: new Date(date).toLocaleDateString("en", { weekday: "short" }),
         count: tickets.filter(
           (t) => t.timestamp && t.timestamp.startsWith(date)
@@ -118,13 +120,13 @@ export default function Analytics() {
         return acc;
       }, {} as Record<string, number>);
 
-      const categoryBreakdown = Object.entries(categories).map(
-        ([name, value]) => ({
-          name,
-          value,
-          percentage: "",
-        })
-      );
+      const categoryBreakdown: ChartDataPoint[] = Object.entries(
+        categories
+      ).map(([name, value]) => ({
+        name,
+        value,
+        percentage: "",
+      }));
 
       setStats({
         totalTickets,
