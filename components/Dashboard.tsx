@@ -1,5 +1,7 @@
 "use client";
 
+import SearchBar from "@/components/SearchBar";
+import { BarChart3, Sun, Moon, Download } from "lucide-react";
 import TicketForm from "@/components/TicketForm";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,6 +39,8 @@ import {
   doc,
   where,
   Timestamp,
+  addDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -73,13 +77,31 @@ interface Ticket {
 export default function SupportDashboard() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [activeFilter, setActiveFilter] = useState<
-    "all" | "new" | "in-progress" | "resolved"
-  >("all");
+  const [activeFilter, setActiveFilter] = useState;
+  "all" | "new" | "in-progress" | ("resolved" > "all");
   const [showNewTicket, setShowNewTicket] = useState(false);
   const [loading, setLoading] = useState(true);
   const [customResponse, setCustomResponse] = useState("");
   const [sendingResponse, setSendingResponse] = useState(false);
+  const [theme, setTheme] = useState("dark");
+  const [creatingDemo, setCreatingDemo] = useState(false);
+
+  // Initialize theme from localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    setTheme(savedTheme);
+    if (savedTheme === "light") {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  // Theme toggle function
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    document.documentElement.classList.toggle("dark");
+    localStorage.setItem("theme", newTheme);
+  };
 
   // Fetch tickets from Firebase
   useEffect(() => {
@@ -138,6 +160,21 @@ export default function SupportDashboard() {
     return () => unsubscribe();
   }, [activeFilter]);
 
+  const [searchResults, setSearchResults] = useState<Ticket[] | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Add search handler
+  const handleSearchResults = (results: Ticket[]) => {
+    setSearchResults(results);
+    setIsSearching(results.length > 0);
+  };
+
+  // Add clear search function
+  const clearSearch = () => {
+    setSearchResults(null);
+    setIsSearching(false);
+  };
+
   // Update ticket status
   const updateTicketStatus = async (ticketId: string, newStatus: string) => {
     try {
@@ -178,6 +215,146 @@ export default function SupportDashboard() {
     } finally {
       setSendingResponse(false);
     }
+  };
+
+  // Create demo tickets function
+  const createDemoTickets = async () => {
+    const demoTickets = [
+      {
+        customer: "Sarah Johnson",
+        subject: "Urgent: Payment charged twice!",
+        message:
+          "I was charged $99 twice for my subscription! This is completely unacceptable. I need an immediate refund for the duplicate charge. My bank account is now overdrawn because of this error!",
+        sentiment: "negative",
+        priority: "high",
+        category: "billing",
+      },
+      {
+        customer: "Mike Chen",
+        subject: "Feature request - Slack integration",
+        message:
+          "Your product is fantastic! Would love to see Slack integration so our team can get notifications directly. This would really improve our workflow.",
+        sentiment: "positive",
+        priority: "low",
+        category: "feature request",
+      },
+      {
+        customer: "Emma Wilson",
+        subject: "Can't login after password reset",
+        message:
+          "I reset my password yesterday but now I can't login with the new password. It keeps saying invalid credentials. I've tried multiple times and cleared my browser cache.",
+        sentiment: "negative",
+        priority: "high",
+        category: "technical",
+      },
+      {
+        customer: "David Brown",
+        subject: "Thank you for excellent support!",
+        message:
+          "Just wanted to say thanks to your support team, especially Alex who helped me yesterday. Problem solved in 5 minutes. Best customer service I've experienced!",
+        sentiment: "positive",
+        priority: "low",
+        category: "feedback",
+      },
+      {
+        customer: "Lisa Anderson",
+        subject: "API rate limit questions",
+        message:
+          "We're hitting rate limits on the API. Our plan says 10,000 requests per hour but we're getting blocked at around 5,000. Can you please check our account?",
+        sentiment: "neutral",
+        priority: "medium",
+        category: "technical",
+      },
+    ];
+
+    setCreatingDemo(true);
+
+    try {
+      for (const ticketData of demoTickets) {
+        // First analyze with AI
+        const analysisResponse = await fetch("/api/analyze-ticket", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ticket: ticketData.message,
+            customerId: ticketData.customer,
+            subject: ticketData.subject,
+          }),
+        });
+
+        const analysis = await analysisResponse.json();
+
+        // Then save to Firebase with AI analysis
+        await addDoc(collection(db, "tickets"), {
+          ...ticketData,
+          status: "new",
+          suggestedResponse:
+            analysis.suggestedResponse || analysis.analysis || "",
+          aiAnalysis: analysis,
+          createdAt: serverTimestamp(),
+          timestamp: new Date().toISOString(),
+          id: `T-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        });
+
+        // Wait a bit between tickets to show real-time updates
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+
+      alert(
+        "Demo tickets created successfully! Watch them appear in real-time."
+      );
+    } catch (error) {
+      console.error("Error creating demo tickets:", error);
+      alert(
+        "Error creating demo tickets. Make sure your n8n webhook is active."
+      );
+    } finally {
+      setCreatingDemo(false);
+    }
+  };
+
+  // Export to CSV function
+  const exportToCSV = () => {
+    const headers = [
+      "ID",
+      "Customer",
+      "Subject",
+      "Status",
+      "Priority",
+      "Sentiment",
+      "Category",
+      "Created At",
+    ];
+    const rows = tickets.map((ticket) => [
+      ticket.id.slice(-6),
+      ticket.customer,
+      ticket.subject,
+      ticket.status,
+      ticket.priority,
+      ticket.sentiment,
+      ticket.category || "N/A",
+      ticket.timestamp,
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `support-tickets-${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const getSentimentColor = (sentiment: string) => {
@@ -232,20 +409,47 @@ export default function SupportDashboard() {
     }
   };
 
+  // Get tickets to display (search results or all tickets)
+  const displayTickets = searchResults || tickets;
+
   return (
-    <div className="dark min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       <div className="flex h-screen">
         {/* Sidebar */}
         <div className="w-64 bg-sidebar border-r border-sidebar-border">
           <div className="p-6">
-            <h1 className="text-xl font-bold text-sidebar-foreground">
-              Support Hub
-            </h1>
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-bold text-sidebar-foreground">
+                Support Hub
+              </h1>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleTheme}
+                className="h-8 w-8 p-0"
+              >
+                {theme === "dark" ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
             <Button
               className="w-full mt-4"
               onClick={() => setShowNewTicket(true)}
             >
               + New Ticket
+            </Button>
+            <Button
+              className="w-full mt-2"
+              variant="outline"
+              onClick={createDemoTickets}
+              disabled={creatingDemo}
+            >
+              {creatingDemo
+                ? "Creating Demo Data..."
+                : "🎮 Create Demo Tickets"}
             </Button>
           </div>
 
@@ -265,7 +469,6 @@ export default function SupportDashboard() {
                 {tickets.length}
               </Badge>
             </Button>
-
             <Button
               variant={activeFilter === "new" ? "default" : "ghost"}
               className={`w-full justify-start ${
@@ -281,7 +484,6 @@ export default function SupportDashboard() {
                 {tickets.filter((t) => t.status === "new").length}
               </Badge>
             </Button>
-
             <Button
               variant={activeFilter === "in-progress" ? "default" : "ghost"}
               className={`w-full justify-start ${
@@ -297,7 +499,6 @@ export default function SupportDashboard() {
                 {tickets.filter((t) => t.status === "in-progress").length}
               </Badge>
             </Button>
-
             <Button
               variant={activeFilter === "resolved" ? "default" : "ghost"}
               className={`w-full justify-start ${
@@ -312,6 +513,15 @@ export default function SupportDashboard() {
               <Badge variant="secondary" className="ml-auto">
                 {tickets.filter((t) => t.status === "resolved").length}
               </Badge>
+            </Button>
+            <Separator className="my-4" />
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-sidebar-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              onClick={() => (window.location.href = "/analytics")}
+            >
+              <BarChart3 className="mr-2 h-4 w-4" />
+              Analytics
             </Button>
           </nav>
 
@@ -329,14 +539,36 @@ export default function SupportDashboard() {
           {/* Ticket List */}
           <div className="w-96 border-r border-border">
             <div className="p-4 border-b border-border">
-              <h2 className="text-lg font-semibold text-foreground">
-                {loading ? "Loading tickets..." : "Tickets"}
-              </h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold text-foreground">
+                  {isSearching
+                    ? `Search Results (${searchResults?.length})`
+                    : loading
+                    ? "Loading tickets..."
+                    : "Tickets"}
+                </h2>
+                <div className="flex items-center gap-2">
+                  {isSearching && (
+                    <Button size="sm" variant="ghost" onClick={clearSearch}>
+                      Clear search
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={exportToCSV}
+                    disabled={tickets.length === 0}
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <SearchBar onResults={handleSearchResults} />
             </div>
 
             <ScrollArea className="h-[calc(100vh-73px)]">
               <div className="p-4 space-y-3">
-                {tickets.map((ticket) => (
+                {displayTickets.map((ticket) => (
                   <Card
                     key={ticket.id}
                     className={`cursor-pointer transition-colors hover:bg-accent/50 ${
@@ -383,12 +615,18 @@ export default function SupportDashboard() {
                   </Card>
                 ))}
 
-                {tickets.length === 0 && !loading && (
+                {displayTickets.length === 0 && !loading && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Inbox className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>No tickets found</p>
+                    <p>
+                      {isSearching
+                        ? "No tickets found matching your search"
+                        : "No tickets found"}
+                    </p>
                     <p className="text-sm mt-2">
-                      Create a new ticket to get started
+                      {isSearching
+                        ? "Try a different search term"
+                        : "Create a new ticket to get started"}
                     </p>
                   </div>
                 )}

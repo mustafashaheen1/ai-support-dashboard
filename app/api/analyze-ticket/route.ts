@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   
   try {
     // Use environment variable or fallback
-    const webhookUrl = process.env.N8N_WEBHOOK_URL || 'your-webhook-url-here'
+    const webhookUrl = process.env.N8N_WEBHOOK_URL || 'https://mustafashaheen.app.n8n.cloud/webhook/6f1d6496-0056-428a-ac6b-0f073409cc5f'
     
     console.log('2. Calling webhook:', webhookUrl)
     
